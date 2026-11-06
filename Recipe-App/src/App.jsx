@@ -1,47 +1,174 @@
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { getRecipes } from './services/api';
-import { CreatePost } from './components/CreatePost.jsx';
-import { PostList } from './components/PostList.jsx';
-import { PostSorting } from './components/PostSorting.jsx';
+import React, { useState, useEffect } from 'react'
 
-export function App() {
-  const [sortBy, setSortBy] = useState('createdAt');
-  const [sortOrder, setSortOrder] = useState('descending');
+function App() {
+  const [recipes, setRecipes] = useState([])
+  const [title, setTitle] = useState('')
+  const [imageUrl, setImageUrl] = useState('')
+  const [ingredients, setIngredients] = useState('')
+  const [steps, setSteps] = useState('') // Added steps state
 
-  // Fetch recipes using TanStack Query with sorting options
-  const { data: recipes = [], isLoading, isError } = useQuery({
-    queryKey: ['posts', { sortBy, sortOrder }],
-    queryFn: () => getRecipes({ sortBy, sortOrder }),
-  });
+  // Simple auth state check
+  const token = localStorage.getItem('token')
+
+  // Fetch recipes on load
+  useEffect(() => {
+    fetch('/api/recipes')
+      .then((res) => res.json())
+      .then((data) => setRecipes(data))
+      .catch((err) => console.error('Error fetching recipes:', err))
+  }, [])
+
+  // Handle recipe submission
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    try {
+      const response = await fetch('/api/recipes', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          title,
+          imageUrl,
+          ingredients: ingredients.split(',').map((i) => i.trim()),
+          steps: steps.split('\n').map((s) => s.trim()),
+        }),
+      })
+
+      if (!response.ok) throw new Error('Failed to create recipe')
+
+      const newRecipe = await response.json()
+      setRecipes([newRecipe, ...recipes]) // Add to feed
+
+      // Clear form fields
+      setTitle('')
+      setImageUrl('')
+      setIngredients('')
+      setSteps('')
+    } catch (err) {
+      console.error(err)
+      alert('Failed to create recipe. Please try again.')
+    }
+  }
 
   return (
-    <div style={{ maxWidth: '650px', margin: '0 auto', padding: '20px', fontFamily: 'Arial, sans-serif' }}>
+    <div style={{ padding: '20px', fontFamily: 'Arial' }}>
       <h1>Real-Time Recipe Sharing App</h1>
 
-      {/* Form to create a new recipe */}
-      <CreatePost />
+      {/* Recipe Creation Form */}
+      {token ? (
+        <form
+          onSubmit={handleSubmit}
+          style={{
+            marginBottom: '30px',
+            background: '#f4f4f4',
+            padding: '20px',
+            borderRadius: '8px',
+          }}
+        >
+          <h3>Add a New Recipe</h3>
+          <div>
+            <label>Recipe Title:</label>
+            <br />
+            <input
+              type='text'
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              required
+            />
+          </div>
+          <div>
+            <label>Image URL:</label>
+            <br />
+            <input
+              type='text'
+              value={imageUrl}
+              onChange={(e) => setImageUrl(e.target.value)}
+              required
+            />
+          </div>
+          <div>
+            <label>Ingredients (comma-separated):</label>
+            <br />
+            <textarea
+              value={ingredients}
+              onChange={(e) => setIngredients(e.target.value)}
+              placeholder='e.g. 2 eggs, butter, salt'
+              required
+            />
+          </div>
+          <div>
+            <label>Steps (one step per line):</label>
+            <br />
+            <textarea
+              value={steps}
+              onChange={(e) => setSteps(e.target.value)}
+              placeholder='1. Crack eggs&#10;2. Whisk well&#10;3. Cook on medium heat'
+              required
+            />
+          </div>
+          <button
+            type='submit'
+            style={{ marginTop: '10px', padding: '8px 16px' }}
+          >
+            Add Recipe
+          </button>
+        </form>
+      ) : (
+        <p>Please log in to add a recipe.</p>
+      )}
 
-      <hr style={{ margin: '30px 0' }} />
+      {/* Recipe Feed */}
+      <h2>Recipe Feed</h2>
+      <div>
+        {recipes.map((recipe) => (
+          <div
+            key={recipe._id}
+            style={{
+              border: '1px solid #ddd',
+              padding: '15px',
+              marginBottom: '15px',
+              borderRadius: '8px',
+            }}
+          >
+            <h3>{recipe.title}</h3>
+            {recipe.imageUrl && (
+              <img
+                src={recipe.imageUrl}
+                alt={recipe.title}
+                style={{
+                  maxWidth: '200px',
+                  display: 'block',
+                  marginBottom: '10px',
+                }}
+              />
+            )}
+            <p>
+              <strong>Author:</strong> {recipe.authorName || 'Anonymous'}
+            </p>
 
-      {/* Feed Header with Sorting */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '10px' }}>
-        <h2>Recipe Feed</h2>
-        <PostSorting
-          fields={['createdAt', 'title']}
-          value={sortBy}
-          onChange={setSortBy}
-          orderValue={sortOrder}
-          onOrderChange={setSortOrder}
-        />
+            <p>
+              <strong>Ingredients:</strong>
+            </p>
+            <ul>
+              {recipe.ingredients.map((ing, idx) => (
+                <li key={idx}>{ing}</li>
+              ))}
+            </ul>
+
+            <p>
+              <strong>Steps:</strong>
+            </p>
+            <ol>
+              {recipe.steps &&
+                recipe.steps.map((step, idx) => <li key={idx}>{step}</li>)}
+            </ol>
+          </div>
+        ))}
       </div>
-
-      {/* Loading and Error States */}
-      {isLoading && <p>Loading delicious recipes...</p>}
-      {isError && <p style={{ color: 'red' }}>Error loading recipes from the server.</p>}
-      
-      {/* Recipe List Feed */}
-      {!isLoading && !isError && <PostList posts={recipes} />}
     </div>
-  );
+  )
 }
+
+export function App()
