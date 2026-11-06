@@ -1,32 +1,44 @@
-import express from 'express';
-import User from '../db/models/User.js';
+import express from 'express'
+import jwt from 'jsonwebtoken'
+import User from '../db/models/User.js'
 
-const router = express.Router();
+const router = express.Router()
+const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret'
 
 router.post('/signup', async (req, res) => {
   try {
-    const { username, password } = req.body;
-    const newUser = new User({ username, password });
-    await newUser.save();
-    res.status(201).json({ message: 'User created successfully!' });
+    const { username, password } = req.body
+    const newUser = new User({ username, password })
+    await newUser.save()
+    res.status(201).json({ message: 'User created successfully!' })
   } catch (error) {
-    res.status(500).json({ error: 'Username might already be taken or server error.' });
+    res
+      .status(500)
+      .json({ error: 'Username might already be taken or server error.' })
   }
-});
+})
 
 router.post('/login', async (req, res) => {
   try {
-    const { username, password } = req.body;
-    const user = await User.findOne({ username });
+    const { username, password } = req.body
+    const user = await User.findOne({ username })
 
     if (!user || user.password !== password) {
-      return res.status(400).json({ error: 'Invalid username or password' });
+      return res.status(400).json({ error: 'Invalid username or password' })
     }
 
-    res.status(200).json({ message: 'Logged in successfully!', user });
-  } catch (error) {
-    res.status(500).json({ error: 'Server error' });
-  }
-});
+    // Generate JWT token containing the user's id and username
+    const token = jwt.sign(
+      { id: user._id, username: user.username },
+      JWT_SECRET,
+      { expiresIn: '1h' },
+    )
 
-export default router;
+    // Return the token in the response object
+    res.status(200).json({ message: 'Logged in successfully!', token, user })
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' })
+  }
+})
+
+export default router
