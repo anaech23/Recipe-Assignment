@@ -1,3 +1,5 @@
+import jwt from 'jsonwebtoken'
+
 import {
   listAllPosts,
   listPostsByAuthor,
@@ -7,10 +9,13 @@ import {
   updatePost,
   deletePost,
 } from '../services/posts.js'
+
 export function postsRoutes(app) {
+  // GET all recipes
   app.get('/api/v1/posts', async (req, res) => {
     const { sortBy, sortOrder, author, tag } = req.query
     const options = { sortBy, sortOrder }
+
     try {
       if (author && tag) {
         return res
@@ -24,47 +29,93 @@ export function postsRoutes(app) {
         return res.json(await listAllPosts(options))
       }
     } catch (err) {
-      console.error('error listing posts', err)
-      return res.status(500).end()
+      console.error('Error listing recipes:', err)
+      return res.status(500).json({ error: err.message })
     }
   })
+
+  // GET one recipe
   app.get('/api/v1/posts/:id', async (req, res) => {
-    const { id } = req.params
     try {
-      const post = await getPostById(id)
-      if (post === null) return res.status(404).end()
+      const post = await getPostById(req.params.id)
+
+      if (post === null) {
+        return res.status(404).json({ error: 'Recipe not found' })
+      }
+
       return res.json(post)
     } catch (err) {
-      console.error('error getting post', err)
-      return res.status(500).end()
+      console.error('Error getting recipe:', err)
+      return res.status(500).json({ error: err.message })
     }
   })
+
+  // CREATE a recipe
   app.post('/api/v1/posts', async (req, res) => {
     try {
-      const post = await createPost(req.body)
-      return res.json(post)
+      const authHeader = req.headers.authorization
+
+      if (!authHeader?.startsWith('Bearer ')) {
+        return res.status(401).json({
+          error: 'Please log in first',
+        })
+      }
+
+      const token = authHeader.split(' ')[1]
+
+      const decoded = jwt.verify(
+        token,
+        process.env.JWT_SECRET || 'your_jwt_secret',
+      )
+
+      const post = await createPost({
+        title: req.body.title,
+        ingredients: req.body.ingredients,
+        steps: req.body.steps,
+        imageUrl: req.body.imageUrl,
+        author: decoded.id,
+        authorName: decoded.username,
+      })
+
+      return res.status(201).json(post)
     } catch (err) {
-      console.error('error creating post', err)
-      return res.status(500).end()
+      console.error('RECIPE CREATION ERROR:', err)
+
+      return res.status(500).json({
+        error: err.message,
+      })
     }
   })
+
+  // UPDATE a recipe
   app.patch('/api/v1/posts/:id', async (req, res) => {
     try {
       const post = await updatePost(req.params.id, req.body)
+
+      if (!post) {
+        return res.status(404).json({ error: 'Recipe not found' })
+      }
+
       return res.json(post)
     } catch (err) {
-      console.error('error updating post', err)
-      return res.status(500).end()
+      console.error('Error updating recipe:', err)
+      return res.status(500).json({ error: err.message })
     }
   })
+
+  // DELETE a recipe
   app.delete('/api/v1/posts/:id', async (req, res) => {
     try {
       const { deletedCount } = await deletePost(req.params.id)
-      if (deletedCount === 0) return res.sendStatus(404)
+
+      if (deletedCount === 0) {
+        return res.status(404).json({ error: 'Recipe not found' })
+      }
+
       return res.status(204).end()
     } catch (err) {
-      console.error('error deleting post', err)
-      return res.status(500).end()
+      console.error('Error deleting recipe:', err)
+      return res.status(500).json({ error: err.message })
     }
   })
 }

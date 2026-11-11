@@ -1,14 +1,22 @@
 import { Recipe } from '../db/models/Recipe.js'
 
-export async function createPost({ title, author, ingredients, instructions, imageUrl, tags }) {
-  const recipe = new Recipe({ 
-    title, 
-    author, 
-    ingredients, 
-    instructions, 
-    imageUrl, 
-    tags 
+export async function createPost({
+  title,
+  author,
+  authorName,
+  ingredients,
+  steps,
+  imageUrl,
+}) {
+  const recipe = new Recipe({
+    title,
+    author,
+    authorName,
+    ingredients,
+    steps,
+    imageUrl,
   })
+
   return await recipe.save()
 }
 
@@ -16,7 +24,9 @@ async function listPosts(
   query = {},
   { sortBy = 'createdAt', sortOrder = 'descending' } = {},
 ) {
-  return await Recipe.find(query).populate('author', 'username').sort({ [sortBy]: sortOrder })
+  return await Recipe.find(query)
+    .populate('author', 'username')
+    .sort({ [sortBy]: sortOrder })
 }
 
 export async function listAllPosts(options) {
@@ -35,11 +45,14 @@ export async function getPostById(postId) {
   return await Recipe.findById(postId).populate('author', 'username')
 }
 
-export async function updatePost(postId, { title, ingredients, instructions, imageUrl, tags }) {
+export async function updatePost(
+  postId,
+  { title, ingredients, steps, imageUrl },
+) {
   return await Recipe.findOneAndUpdate(
     { _id: postId },
-    { $set: { title, ingredients, instructions, imageUrl, tags } },
-    { new: true },
+    { $set: { title, ingredients, steps, imageUrl } },
+    { new: true, runValidators: true },
   )
 }
 

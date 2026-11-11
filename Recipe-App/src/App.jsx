@@ -15,9 +15,16 @@ export function App() {
 
   // Fetch recipes on load
   useEffect(() => {
-    fetch('/api/recipes')
-      .then((res) => res.json())
-      .then((data) => setRecipes(data))
+    fetch('/api/v1/posts')
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error(`Failed to fetch recipes: ${res.status}`)
+        }
+        return res.json()
+      })
+      .then((data) => {
+        setRecipes(data)
+      })
       .catch((err) => console.error('Error fetching recipes:', err))
   }, [])
 
@@ -58,7 +65,7 @@ export function App() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     try {
-      const response = await fetch('/api/recipes', {
+      const response = await fetch('/api/v1/posts', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
