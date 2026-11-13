@@ -32,14 +32,14 @@ jobs:
           context: ./Recipe-App/backend
           file: ./Recipe-App/backend/Dockerfile
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/recipe-app-backend:${{ github.sha }}
+          tags: docker.io/${{ secrets.DOCKERHUB_USERNAME }}/recipe-app-backend:${{ github.sha }}
 
       - id: deploy-backend
         name: Deploy backend to Cloud Run
         uses: google-github-actions/deploy-cloudrun@v2
         with:
           service: recipe-app-backend
-          image: ${{ secrets.DOCKERHUB_USERNAME }}/recipe-app-backend:${{ github.sha }}
+          image: docker.io/${{ secrets.DOCKERHUB_USERNAME }}/recipe-app-backend:${{ github.sha }}
           region: ${{ secrets.GOOGLECLOUD_REGION }}
 
       - name: Build and push frontend image
@@ -48,7 +48,7 @@ jobs:
           context: ./Recipe-App/frontend
           file: ./Recipe-App/frontend/Dockerfile
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/recipe-app-frontend:${{ github.sha }}
+          tags: docker.io/${{ secrets.DOCKERHUB_USERNAME }}/recipe-app-frontend:${{ github.sha }}
           build-args: VITE_BACKEND_URL=${{ steps.deploy-backend.outputs.url }}
 
       - id: deploy-frontend
@@ -56,5 +56,5 @@ jobs:
         uses: google-github-actions/deploy-cloudrun@v2
         with:
           service: recipe-app-frontend
-          image: ${{ secrets.DOCKERHUB_USERNAME }}/recipe-app-frontend:${{ github.sha }}
+          image: docker.io/${{ secrets.DOCKERHUB_USERNAME }}/recipe-app-frontend:${{ github.sha }}
           region: ${{ secrets.GOOGLECLOUD_REGION }}
