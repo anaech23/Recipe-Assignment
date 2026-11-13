@@ -45,8 +45,8 @@ jobs:
       - name: Build and push frontend image
         uses: docker/build-push-action@v5
         with:
-          context: ./Recipe-App/frontend
-          file: ./Recipe-App/frontend/Dockerfile
+          context: ./Recipe-App
+          file: ./Recipe-App/Dockerfile
           push: true
           tags: docker.io/${{ secrets.DOCKERHUB_USERNAME }}/recipe-app-frontend:${{ github.sha }}
           build-args: VITE_BACKEND_URL=${{ steps.deploy-backend.outputs.url }}

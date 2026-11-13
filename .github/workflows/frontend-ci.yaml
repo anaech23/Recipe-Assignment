@@ -12,7 +12,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: Recipe-App/frontend
+        working-directory: Recipe-App
 
     steps:
       - name: Checkout repository
