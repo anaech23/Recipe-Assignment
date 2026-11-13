@@ -27,14 +27,14 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ error: 'Invalid username or password' })
     }
 
-    // Generate JWT token containing the user's id and username
+    // Generate JWT token containing user id and username
     const token = jwt.sign(
       { id: user._id, username: user.username },
       JWT_SECRET,
       { expiresIn: '1h' },
     )
 
-    // Return the token in the response object
+    // Return the token in response object
     res.status(200).json({ message: 'Logged in successfully!', token, user })
   } catch (error) {
     res.status(500).json({ error: 'Server error' })

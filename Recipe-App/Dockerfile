@@ -1,5 +1,5 @@
 FROM node:20 AS build
-ARG VITE_BACKEND_URL=http://localhost:3001/api/v1
+ARG VITE_BACKEND_URL=https://recipe-app-backend-649611590894.us-east5.run.app
 WORKDIR /build
 COPY package.json .
 COPY package-lock.json .
@@ -11,4 +11,4 @@ FROM nginx AS final
 WORKDIR /usr/share/nginx/html
 COPY --from=build /build/dist .
 
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY nginx.conf /etc/nginx/templates/default.conf.template
