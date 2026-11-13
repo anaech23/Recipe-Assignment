@@ -1,4 +1,5 @@
 name: Recipe App Frontend CI
+
 on:
   push:
     branches:
@@ -6,22 +7,32 @@ on:
   pull_request:
     branches:
       - main
+
 jobs:
   lint-and-build:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [16.x, 18.x, 20.x]
+        node-version: [18.x, 20.x]
+    # Uncomment the lines below if your frontend files are in a subdirectory:
+    # defaults:
+    #   run:
+    #     working-directory: ./frontend
     steps:
-      - uses: actions/checkout@v3
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
+
       - name: Install dependencies
         run: npm install
+
       - name: Run linter on frontend
         run: npm run lint
+
       - name: Build frontend
         run: npm run build
